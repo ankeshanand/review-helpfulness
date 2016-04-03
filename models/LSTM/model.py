@@ -9,6 +9,8 @@ from sklearn.cross_validation import train_test_split
 from keras.models import Sequential
 from keras.layers import Dense, Dropout, Activation
 from keras.layers import LSTM
+from keras.utils import np_utils, generic_utils
+
 
 data_loc= 'data/database.sqlite'
 
@@ -68,8 +70,9 @@ reviews['scores'] = categorize_scores(reviews['HelpfulnessNumerator'],
         reviews['HelpfulnessDenominator'])
 print reviews['scores'].head(n=10)
 Text_train, Text_test, y_train, y_test = train_test_split(reviews['word_list'], reviews['scores'],
-        test_size=0.2, random_state=42)
-
+        test_size=0.3, random_state=20)
+y_train, y_test = [np_utils.to_categorical(x) for x in (y_train, y_test)]
+print y_train.shape
 
 #size of hidden layer (length of continuous word representation)
 dimsize=400
@@ -105,15 +108,15 @@ for review in Text_test:
 model = Sequential()
 model.add(LSTM(400, input_shape=(sequence_size, dimsize)))
 model.add(Dropout(0.5))
-model.add(Dense(1))
+model.add(Dense(3))
 model.add(Activation('sigmoid'))
 model.compile(loss='binary_crossentropy',
               optimizer='adam')
 
 print 'Training the LSTM model'
 batch_size = 32
-model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=15,
-          validation_data=(X_test, y_test), show_accuracy=True)
+model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=3,
+          validation_split=0.2, show_accuracy=True)
 score, acc = model.evaluate(X_test, y_test,
                             batch_size=batch_size,
                             show_accuracy=True)
