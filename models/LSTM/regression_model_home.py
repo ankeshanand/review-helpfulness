@@ -105,17 +105,6 @@ Text_train, Text_test, y_train, y_test = train_test_split(reviews['word_list'], 
 print y_train.shape
 del reviews
 
-# cross category
-reviews_cross = pickle.load(open('reviews_Books.p', 'rb'))
-#pickle.dump(reviews, open('reviews_Electronics.p', 'wb'))
-print len(reviews_cross)
-reviews_cross['word_list']=reviews_cross['reviewText'].apply(review_to_words)
-reviews_cross['scores'] = reviews_cross['helpful'].apply(compute_score)
-print reviews_cross['scores'].head(n=10)
-Cross_train, Cross_test, y_cross_train, y_cross_test = train_test_split(reviews_cross['word_list'], reviews_cross['scores'],
-        test_size=0.2, random_state=20)
-del reviews_cross
-
 
 #size of hidden layer (length of continuous word representation)
 dimsize=300
@@ -159,21 +148,6 @@ for idx, review in enumerate(Text_test):
             pass
     X_test[idx] = sequence
 
-for idx, review in enumerate(Cross_test):
-    sequence = np.empty((sequence_size, dimsize))
-    tokens = review
-    count = 0
-    for token in tokens:
-        if count == 200:
-            break
-        try:
-            token = token.lower()
-            sequence[count] = w2v[token]
-            count += 1
-        except:
-            pass
-    X_cross[idx] = sequence
-
 # build the keras LSTM model
 model = Sequential()
 model.add(LSTM(300, input_shape=(sequence_size, dimsize)))
@@ -184,10 +158,10 @@ model.compile(loss=root_mean_squared_error,
               optimizer='rmsprop')
 
 print 'Training the LSTM model'
-batch_size = 32
+batch_size = 128
 model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=10,
           validation_split=0.2)
-score = model.evaluate(X_cross, y_cross_test,batch_size=batch_size)
+score = model.evaluate(X_test, y_test,batch_size=batch_size)
 print score
 pickle.dump(model, open('lstm_model_electronics', 'wb'))
 
