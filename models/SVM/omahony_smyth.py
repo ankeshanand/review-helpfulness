@@ -21,7 +21,7 @@ def compute_score(votes):
     return helpfulness
 
 import cPickle as pickle
-reviews = pickle.load(open('reviews_Books.p', 'rb'))
+reviews = pickle.load(open('reviews_Home.p', 'rb'))
 
 print 'Parsing complete.'
 print len(reviews)

@@ -146,7 +146,7 @@ def compute_score(votes):
 #top_100 = get_top_100_products(data_loc)
 #reviews = getDF(data_loc)
 import cPickle as pickle
-reviews = pickle.load(open('reviews_Electronics.p', 'rb'))
+reviews = pickle.load(open('reviews_Home.p', 'rb'))
 #pickle.dump(reviews, open('reviews_Electronics.p', 'wb'))
 print 'Parsing complete.'
 print len(reviews)

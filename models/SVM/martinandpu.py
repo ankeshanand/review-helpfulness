@@ -13,7 +13,7 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from math import sqrt
 
-data_loc = 'data/reviews_Books.json.gz'
+data_loc = 'data/reviews_Home_and_Kitchen.json.gz'
 galc_loc = 'data/galc.csv'
 top_100 = set([])
 
@@ -51,7 +51,7 @@ def compute_score(votes):
     return helpfulness
 
 import cPickle as pickle
-reviews = pickle.load(open('reviews_Books.p', 'rb'))
+reviews = pickle.load(open('reviews_Home.p', 'rb'))
 
 print 'Parsing complete.'
 print len(reviews)
