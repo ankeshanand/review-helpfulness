@@ -165,6 +165,8 @@ score = model.evaluate(X_test, y_test,batch_size=batch_size)
 print score
 
 y_pred = model.predict(X_test, batch_size=batch_size)
+y_pred = y_pred.flatten()
+y_test = y_test.flatten()
 residuals = y_test - y_pred
 pickle.dump(y_test, open('electronics_fits.p', 'wb'))
 pickle.dump(residuals, open('electronics_residuals.p', 'wb'))
