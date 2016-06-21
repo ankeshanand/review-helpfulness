@@ -1,0 +1,7 @@
+theano
+Keras==0.3.2
+pandas
+scikit-learn
+beautifulsoup4
+gensim
+textstat
