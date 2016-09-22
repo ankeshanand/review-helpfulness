@@ -145,14 +145,13 @@ def compute_score(votes):
 
 #top_100 = get_top_100_products(data_loc)
 #reviews = getDF(data_loc)
-import cPickle as pickle
-reviews = pickle.load(open('reviews_Home.p', 'rb'))
+reviews = pd.read_pickle('../LSTM/reviews.pkl')
 #pickle.dump(reviews, open('reviews_Electronics.p', 'wb'))
 print 'Parsing complete.'
 print len(reviews)
 
-reviews['scores'] = reviews['helpful'].apply(compute_score)
 reviews['word_list']=reviews['reviewText'].apply(review_to_words)
+reviews['scores']=reviews['helpful'].apply(compute_score)
 print reviews['scores'].head(n=10)
 y = reviews['scores']
 Text = reviews['word_list']
@@ -187,7 +186,7 @@ for idx, review in enumerate(Text):
         else:
             continue
 
-        row = df.iloc[inquirer_words[item]]
+        row = df.ix[inquirer_words[item]]
         for i, col in enumerate(inquirer_columns):
             if not pd.isnull(row[col]):
                 INQUIRER_MATRIX[idx][i] += 1
@@ -220,5 +219,3 @@ grid = GridSearchCV(model, params, cv=5, scoring='mean_squared_error', n_jobs=-1
 grid.fit(X, y)
 print grid.best_score_
 print 'RMSE: ' + str(sqrt(abs(grid.best_score_)))
-
-

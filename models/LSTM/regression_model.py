@@ -2,6 +2,8 @@ import re
 import sqlite3
 import pandas as pd
 import numpy as np
+import gzip
+import random
 
 from gensim.models import Word2Vec
 from bs4 import BeautifulSoup
@@ -12,6 +14,11 @@ from keras.layers import LSTM
 from keras.utils import np_utils, generic_utils
 from keras import backend as K
 
+from constants import DATA_LOC_CD, DATA_LOC_ELECTRONICS, DATA_LOC_SPORTS
+
+import theano
+theano.config.openmp = True
+
 
 def root_mean_squared_error(y_true, y_pred):
     """
@@ -20,7 +27,24 @@ def root_mean_squared_error(y_true, y_pred):
     return K.sqrt(K.mean(K.square(y_pred - y_true), axis=-1))
 
 
-data_loc= 'data/database.sqlite'
+def parse(path):
+    with gzip.open(path, 'rb') as g:
+        for l in g:
+            yield eval(l)
+
+
+def getDF(path):
+    i = 0
+    df = {}
+    for d in parse(path):
+        if 'helpful' not in d or len(d['helpful']) != 2 or d['helpful'][1] < 5:
+            continue
+        df[i] = d
+        i += 1
+    sampled_reviews = random.sample(df.keys(), 10000)
+    df = {k: df[k] for k in df.keys() if k in sampled_reviews}
+    return pd.DataFrame.from_dict(df, orient='index')
+
 
 def review_to_words( review ):
     """
@@ -50,24 +74,33 @@ def review_to_words( review ):
 
     return (words)
 
-def categorize_scores(nums, denms):
-    labels = []
-    for n,d in zip(nums,denms):
-        helpfulness = ( (1.0*n) / (1.0*d) )
-        labels.append(helpfulness)
-    return labels
+def compute_score(votes):
+    n, d = votes
+    helpfulness = ( (1.0*n) / (1.0*d) )
+    return helpfulness
 
 # Retrieve the reviews with more than 5 votes
-connection = sqlite3.connect(data_loc)
-reviews = pd.read_sql_query(""" SELECT Text, HelpfulnessNumerator, HelpfulnessDenominator
-        FROM Reviews WHERE HelpfulnessDenominator >= 5""", connection)
-reviews['word_list']=reviews['Text'].apply(review_to_words)
-reviews['scores'] = categorize_scores(reviews['HelpfulnessNumerator'],
-        reviews['HelpfulnessDenominator'])
+
+#print 'Parsing CD Reviews'
+#cd_reviews = getDF(DATA_LOC_CD)
+#print 'Parsing Electronics Reviews'
+#electronics_reviews = getDF(DATA_LOC_ELECTRONICS)
+#print 'Parsing Sports Reviews'
+#sports_reviews = getDF(DATA_LOC_SPORTS)
+
+#reviews = pd.concat([cd_reviews, electronics_reviews, sports_reviews], ignore_index=True)
+#print 'Parsing complete.'
+#print len(reviews)
+reviews = pd.read_pickle('reviews.pkl')
+
+reviews['word_list']=reviews['reviewText'].apply(review_to_words)
+reviews['scores'] = reviews['helpful'].apply(compute_score)
 print reviews['scores'].head(n=10)
 Text_train, Text_test, y_train, y_test = train_test_split(reviews['word_list'], reviews['scores'],
-        test_size=0.3, random_state=20)
+        test_size=0.2, random_state=20)
 print y_train.shape
+
+del reviews
 
 #size of hidden layer (length of continuous word representation)
 dimsize=300
@@ -112,18 +145,26 @@ for idx, review in enumerate(Text_test):
 
 # build the keras LSTM model
 model = Sequential()
-model.add(LSTM(300, input_shape=(sequence_size, dimsize)))
+model.add(LSTM(200, input_shape=(sequence_size, dimsize), return_sequences=True))
 model.add(Dropout(0.5))
+model.add(LSTM(200))
+model.add(Activation('relu'))
 model.add(Dense(1))
 model.compile(loss=root_mean_squared_error,
               optimizer='rmsprop')
 
 print 'Training the LSTM model'
-batch_size = 32
-model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=5,
+batch_size = 128
+model.fit(X_train, y_train, batch_size=batch_size, nb_epoch=10,
           validation_split=0.2)
 score = model.evaluate(X_test, y_test,batch_size=batch_size)
 print score
 
-
-
+import logging
+logname='results.log'
+logging.basicConfig(filename=logname,
+                            filemode='a',
+                            format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
+                            datefmt='%H:%M:%S',
+                            level=logging.DEBUG)
+logging.info('Score= ' + str(score) + ' Model: LSTM ' + ' Layers: 2 ' + ' HiddenLayerDimension: 200*200 ' + ' Dropout: 0.5' + ' ReLu act. ')
