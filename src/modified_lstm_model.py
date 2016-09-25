@@ -131,7 +131,7 @@ model.add(Dropout(0.5))
 model.add(Dense(1))
 
 model_structural = Sequential()
-model_structural.add(Activation('linear'), input_shape=(5,))
+model_structural.add(Activation('linear', input_shape=(5,)))
 
 model_final = Sequential()
 model_final.add(Merge[model, model_structural], mode='concat', concat_axis=1)
