@@ -134,7 +134,7 @@ model_structural = Sequential()
 model_structural.add(Activation('linear', input_shape=(5,)))
 
 model_final = Sequential()
-model_final.add(Merge[model, model_structural], mode='concat', concat_axis=1)
+model_final.add(Merge([model, model_structural], mode='concat'))
 model_final.compile(loss=root_mean_squared_error,
               optimizer='rmsprop')
 
