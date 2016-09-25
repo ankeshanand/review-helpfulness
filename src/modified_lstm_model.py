@@ -141,9 +141,9 @@ model_final.compile(loss=root_mean_squared_error,
 
 print 'Training the LSTM model'
 batch_size = 128
-model.fit([X_train, X_structural_train], y_train, batch_size=batch_size, nb_epoch=10,
+model_final.fit([X_train, X_structural_train], y_train, batch_size=batch_size, nb_epoch=10,
           validation_split=0.2)
-score = model.evaluate([X_test, X_structural_test], y_test,batch_size=batch_size)
+score = model_final.evaluate([X_test, X_structural_test], y_test,batch_size=batch_size)
 print score
 
 import logging
